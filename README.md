@@ -30,6 +30,7 @@ npm install
 npm run dev
 ```
 - Vite usa proxy a `http://localhost:3001` para `/api` (config en `apps/frontend/vite.config.ts`).
+- Despliegue: Vercel/Netlify. Build `npm run build`, output `dist`, set `VITE_API_BASE` al backend público.
 
 ## Integración frontend ↔ API
 - Servicios HTTP en `apps/frontend/src/services`: `authApi`, `lineasApi`, `proyectosApi`, `cursosApi` (base en `api.ts`).
@@ -42,3 +43,4 @@ npm run dev
 
 ## Notas
 - El frontend consume el backend; las llamadas directas a Gemini se hacen vía proxy (`/api/v1/gemini/*`).
+- Ver guía de despliegue en `docs/deploy.md`.
