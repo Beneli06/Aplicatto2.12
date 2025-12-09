@@ -14,6 +14,14 @@ const JWT_SECRET = process.env.JWT_SECRET || "change_this_secret";
 const app = express();
 // Disable CSP in dev to avoid Chrome DevTools complaints; keep other helmet defaults.
 app.use(helmet({ contentSecurityPolicy: false }));
+// Relaxed CSP header for local dev to silence Chrome DevTools fetch warnings.
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src *; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'"
+  );
+  next();
+});
 app.use(cors({ origin: true }));
 app.use(express.json());
 app.use(rateLimit({ windowMs: 60_000, max: 200 }));
@@ -47,6 +55,14 @@ function requireRole(...roles: UserRole[]) {
 // --- Root ---
 app.get("/", (_req, res) => {
   res.json({ ok: true, message: "Aplicatto API - use /api/v1" });
+});
+// Friendly index for /api/v1
+app.get("/api/v1", (_req, res) => {
+  res.json({ ok: true, message: "Aplicatto API - endpoints under /api/v1/*" });
+});
+// Silence Chrome devtools probe path
+app.get("/.well-known/appspecific/com.chrome.devtools.json", (_req, res) => {
+  res.json({});
 });
 
 // --- Auth ---
