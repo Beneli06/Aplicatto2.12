@@ -1,0 +1,233 @@
+{
+  "info": {
+    "name": "Aplicatto API - Semillero",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "c8f2f3c4-9b7d-49c1-9b46-7af9f5b8a111"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"prof@aplicatto.edu\",\n  \"password\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [ "{{base_url}}" ],
+              "path": [ "auth", "login" ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login correcto', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.token).to.exist;",
+                  "  pm.environment.set('token', data.token);",
+                  "});",
+                  "pm.test('Devuelve usuario', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.user).to.have.property('id');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Líneas",
+      "item": [
+        {
+          "name": "Listar líneas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/lineas",
+              "host": [ "{{base_url}}" ],
+              "path": [ "lineas" ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve arreglo', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear línea (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Línea Postman\",\n  \"description\": \"Creada desde colección\",\n  \"leaderId\": \"2\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/lineas",
+              "host": [ "{{base_url}}" ],
+              "path": [ "lineas" ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Línea creada', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.environment.set('line_id', data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Proyectos",
+      "item": [
+        {
+          "name": "Crear proyecto (ADMIN/DOCENTE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Proyecto Postman\",\n  \"description\": \"Creado desde colección\",\n  \"lineId\": \"{{line_id}}\",\n  \"leaderId\": \"2\",\n  \"year\": 2025,\n  \"state\": \"En Curso\",\n  \"tags\": [\"postman\", \"demo\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/proyectos",
+              "host": [ "{{base_url}}" ],
+              "path": [ "proyectos" ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Proyecto creado', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.environment.set('project_id', data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar proyectos por línea",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/proyectos?lineId={{line_id}}",
+              "host": [ "{{base_url}}" ],
+              "path": [ "proyectos" ],
+              "query": [ { "key": "lineId", "value": "{{line_id}}" } ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve arreglo', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cursos",
+      "item": [
+        {
+          "name": "Crear curso (DOCENTE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Curso Postman\",\n  \"description\": \"Creado desde colección\",\n  \"docenteId\": \"2\",\n  \"lineId\": \"{{line_id}}\",\n  \"level\": \"Básico\",\n  \"isPublic\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cursos",
+              "host": [ "{{base_url}}" ],
+              "path": [ "cursos" ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Curso creado', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "pm.environment.set('curso_id', data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar cursos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/cursos",
+              "host": [ "{{base_url}}" ],
+              "path": [ "cursos" ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve arreglo', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
