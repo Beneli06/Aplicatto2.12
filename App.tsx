@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Navbar, Footer, Modal, Input, Button } from './components';
-import { LandingPage, PublicLinesView, PublicProjectsView, PublicCoursesView, AdminDashboard, TeacherDashboard, StudentDashboard } from './views';
+import { LandingPage, PublicLinesView, PublicProjectsView, PublicCoursesView, AdminDashboard, TeacherDashboard, StudentDashboard, UserProfileView } from './views';
 import { User, UserRole, ResearchLine, Project, Course, ProjectState } from './types';
 
 // --- MOCK DATA ---
 const INITIAL_USERS: User[] = [
-  { id: '1', name: 'Admin User', email: 'admin@aplicatto.edu', role: UserRole.ADMIN },
-  { id: '2', name: 'Prof. Jhon Doe', email: 'prof@aplicatto.edu', role: UserRole.DOCENTE, specialty: 'Data Science' },
-  { id: '3', name: 'Estudiante Ana', email: 'ana@est.edu', role: UserRole.ESTUDIANTE },
+  { id: '1', name: 'Admin User', email: 'admin@aplicatto.edu', role: UserRole.ADMIN, password: '123' },
+  { id: '2', name: 'Prof. Jhon Doe', email: 'prof@aplicatto.edu', role: UserRole.DOCENTE, specialty: 'Data Science', password: '123', bio: 'Experto en IA.', interests: ['ML', 'Python'] },
+  { id: '3', name: 'Estudiante Ana', email: 'ana@est.edu', role: UserRole.ESTUDIANTE, password: '123', bio: 'Estudiante de ingeniería.', interests: ['IoT'] },
 ];
 
 const INITIAL_LINES: ResearchLine[] = [
@@ -38,7 +38,7 @@ const ScrollToTop = () => {
 
 const App: React.FC = () => {
   // Global State (Simulating DB)
-  const [users] = useState<User[]>(INITIAL_USERS);
+  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [lines] = useState<ResearchLine[]>(INITIAL_LINES);
   const [projects] = useState<Project[]>(INITIAL_PROJECTS);
   const [courses, setCourses] = useState<Course[]>(INITIAL_COURSES);
@@ -46,19 +46,57 @@ const App: React.FC = () => {
   // Auth State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoginModalOpen, setLoginModalOpen] = useState(false);
-  const [loginEmail, setLoginEmail] = useState('');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  
+  // Login/Register Form State
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   
   // Handlers
-  const handleLogin = () => {
-    // Simple mock login logic
-    const user = users.find(u => u.email === loginEmail);
-    if (user) {
-      setCurrentUser(user);
-      setLoginModalOpen(false);
-      setLoginEmail('');
+  const handleAuth = () => {
+    if (authMode === 'login') {
+      const user = users.find(u => u.email === email);
+      if (user && user.password === password) {
+        setCurrentUser(user);
+        setLoginModalOpen(false);
+        resetAuthForm();
+      } else {
+        alert('Credenciales incorrectas.');
+      }
     } else {
-      alert('Usuario no encontrado (Prueba: admin@aplicatto.edu, prof@aplicatto.edu, ana@est.edu)');
+      // Register
+      if (!email || !password || !name) {
+        alert('Por favor completa todos los campos.');
+        return;
+      }
+      if (users.some(u => u.email === email)) {
+        alert('El correo ya está registrado.');
+        return;
+      }
+      
+      const newUser: User = {
+        id: Date.now().toString(),
+        name,
+        email,
+        password,
+        role: UserRole.ESTUDIANTE, // Default role for registration
+        bio: '',
+        interests: []
+      };
+      
+      setUsers([...users, newUser]);
+      setCurrentUser(newUser);
+      setLoginModalOpen(false);
+      resetAuthForm();
     }
+  };
+
+  const resetAuthForm = () => {
+    setEmail('');
+    setPassword('');
+    setName('');
+    setAuthMode('login');
   };
 
   const handleLogout = () => {
@@ -70,6 +108,15 @@ const App: React.FC = () => {
     setCourses([...courses, newCourse]);
   };
 
+  const handleUpdateUser = (updatedUser: User) => {
+    // Update global user list
+    const updatedUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
+    setUsers(updatedUsers);
+    
+    // Update current user session
+    setCurrentUser(updatedUser);
+  };
+
   return (
     <HashRouter>
       <ScrollToTop />
@@ -77,7 +124,7 @@ const App: React.FC = () => {
         <Navbar 
           user={currentUser} 
           onLogout={handleLogout} 
-          onLoginClick={() => setLoginModalOpen(true)} 
+          onLoginClick={() => { setAuthMode('login'); setLoginModalOpen(true); }} 
         />
 
         <div className="flex-grow">
@@ -88,7 +135,7 @@ const App: React.FC = () => {
             <Route path="/proyectos" element={<PublicProjectsView projects={projects} lines={lines} />} />
             <Route path="/cursos-publicos" element={<PublicCoursesView courses={courses} />} />
             
-            {/* Dashboard Router */}
+            {/* Private Routes */}
             <Route path="/dashboard" element={
               currentUser ? (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -106,32 +153,65 @@ const App: React.FC = () => {
                 <Navigate to="/" replace />
               )
             } />
+
+            <Route path="/profile" element={
+              currentUser ? (
+                <UserProfileView user={currentUser} onUpdateUser={handleUpdateUser} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            } />
           </Routes>
         </div>
 
         <Footer />
 
-        {/* Login Modal */}
-        <Modal isOpen={isLoginModalOpen} onClose={() => setLoginModalOpen(false)} title="Iniciar Sesión">
+        {/* Auth Modal */}
+        <Modal isOpen={isLoginModalOpen} onClose={() => setLoginModalOpen(false)} title={authMode === 'login' ? "Iniciar Sesión" : "Registrarse"}>
           <div className="space-y-4">
-            <p className="text-sm text-slate-500 mb-4">
-              Ingresa tu correo institucional para acceder al módulo académico.
-            </p>
+            
+            {authMode === 'register' && (
+              <Input 
+                label="Nombre Completo" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                placeholder="Tu nombre"
+              />
+            )}
+
             <Input 
               label="Correo Electrónico" 
               type="email" 
-              value={loginEmail} 
-              onChange={(e) => setLoginEmail(e.target.value)} 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
               placeholder="ejemplo@aplicatto.edu"
             />
-            <div className="text-xs text-slate-400 bg-slate-100 p-2 rounded">
-              <p>Demo accounts:</p>
-              <p>Admin: admin@aplicatto.edu</p>
-              <p>Docente: prof@aplicatto.edu</p>
-              <p>Estudiante: ana@est.edu</p>
-            </div>
-            <div className="flex justify-end pt-2">
-               <Button onClick={handleLogin}>Entrar</Button>
+            
+            <Input 
+              label="Contraseña" 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              placeholder="******"
+            />
+
+            {authMode === 'login' && (
+              <div className="text-xs text-slate-400 bg-slate-100 p-2 rounded">
+                <p>Demo accounts (pwd: 123):</p>
+                <p>admin@aplicatto.edu</p>
+                <p>prof@aplicatto.edu</p>
+                <p>ana@est.edu</p>
+              </div>
+            )}
+            
+            <div className="flex justify-between items-center pt-2">
+               <button 
+                 className="text-sm text-blue-600 hover:underline"
+                 onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); }}
+               >
+                 {authMode === 'login' ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
+               </button>
+               <Button onClick={handleAuth}>{authMode === 'login' ? 'Entrar' : 'Registrarse'}</Button>
             </div>
           </div>
         </Modal>

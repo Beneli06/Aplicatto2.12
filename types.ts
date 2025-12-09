@@ -12,6 +12,9 @@ export interface User {
   role: UserRole;
   avatar?: string;
   specialty?: string; // For teachers
+  password?: string; // For auth
+  bio?: string;
+  interests?: string[];
 }
 
 export interface ResearchLine {

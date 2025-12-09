@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer 
 } from 'recharts';
@@ -9,7 +10,7 @@ import {
   Button, SectionHeader, MetricCard, Input, Modal 
 } from './components';
 import { 
-  ArrowRight, Users, BookOpen, Layers, Search, Briefcase, Plus, Sparkles, CheckCircle, Lock 
+  ArrowRight, Users, BookOpen, Layers, Search, Briefcase, Plus, Sparkles, CheckCircle, Lock, User as UserIcon, Save, ChevronRight
 } from 'lucide-react';
 import { generateCourseSyllabus, generateProjectAbstract } from './services/geminiService';
 
@@ -32,14 +33,14 @@ export const LandingPage: React.FC = () => (
               </p>
               <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
                 <div className="rounded-md shadow">
-                  <a href="#/lineas" className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg">
+                  <Link to="/lineas" className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg">
                     Ver Líneas
-                  </a>
+                  </Link>
                 </div>
                 <div className="mt-3 sm:mt-0 sm:ml-3">
-                  <a href="#/cursos-publicos" className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 md:py-4 md:text-lg">
+                  <Link to="/cursos-publicos" className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 md:py-4 md:text-lg">
                     Formación
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -91,9 +92,9 @@ export const PublicLinesView: React.FC<{ lines: ResearchLine[] }> = ({ lines }) 
             <p className="text-slate-600 text-sm mb-4 line-clamp-3">{line.description}</p>
             <div className="flex items-center justify-between">
                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">Activa</span>
-               <a href="#/proyectos" className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+               <Link to="/proyectos" className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
                  Ver Proyectos <ArrowRight size={14} className="ml-1"/>
-               </a>
+               </Link>
             </div>
           </div>
         </div>
@@ -186,7 +187,84 @@ export const PublicCoursesView: React.FC<{ courses: Course[] }> = ({ courses }) 
 
 // --- PRIVATE / DASHBOARD VIEWS ---
 
-import { ChevronRight } from 'lucide-react';
+export const UserProfileView: React.FC<{ user: User; onUpdateUser: (u: User) => void }> = ({ user, onUpdateUser }) => {
+  const [formData, setFormData] = useState<User>({ ...user });
+  const [interestsStr, setInterestsStr] = useState(user.interests?.join(', ') || '');
+  const [message, setMessage] = useState('');
+
+  const handleSave = () => {
+    const updatedUser = {
+      ...formData,
+      interests: interestsStr.split(',').map(s => s.trim()).filter(Boolean)
+    };
+    onUpdateUser(updatedUser);
+    setMessage('Perfil actualizado correctamente.');
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <SectionHeader title="Mi Perfil" subtitle="Edita tu información personal y profesional." />
+      
+      <div className="bg-white shadow rounded-lg p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Input 
+            label="Nombre Completo" 
+            value={formData.name} 
+            onChange={e => setFormData({...formData, name: e.target.value})} 
+          />
+          <Input 
+            label="Correo Electrónico" 
+            value={formData.email} 
+            disabled 
+            className="bg-slate-100 text-slate-500 cursor-not-allowed"
+          />
+        </div>
+
+        {user.role === UserRole.DOCENTE && (
+          <Input 
+            label="Especialidad / Área de conocimiento" 
+            value={formData.specialty || ''} 
+            onChange={e => setFormData({...formData, specialty: e.target.value})} 
+            placeholder="Ej: Ciencia de Datos, IoT, Robótica..."
+          />
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Biografía Corta</label>
+          <textarea
+            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            rows={4}
+            value={formData.bio || ''}
+            onChange={e => setFormData({...formData, bio: e.target.value})}
+            placeholder="Cuéntanos un poco sobre ti..."
+          />
+        </div>
+
+        <Input 
+          label="Intereses (separados por coma)" 
+          value={interestsStr} 
+          onChange={e => setInterestsStr(e.target.value)} 
+          placeholder="IA, Medio Ambiente, Programación, etc."
+        />
+        
+        <Input 
+          label="Contraseña" 
+          type="password"
+          value={formData.password || ''} 
+          onChange={e => setFormData({...formData, password: e.target.value})} 
+        />
+
+        <div className="pt-4 flex items-center justify-between">
+          <div className="text-green-600 text-sm font-medium">{message}</div>
+          <Button onClick={handleSave} className="flex items-center gap-2">
+            <Save size={16} /> Guardar Cambios
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const AdminDashboard: React.FC<{
   users: User[];

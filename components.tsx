@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Menu, X, BookOpen, Users, Lightbulb, 
-  LayoutDashboard, LogOut, ChevronRight, GraduationCap 
+  LayoutDashboard, LogOut, ChevronRight, GraduationCap, User as UserIcon
 } from 'lucide-react';
 import { UserRole, User } from './types';
 
@@ -79,6 +79,11 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onLoginClick }) 
                     Panel {user.role === UserRole.ADMIN ? 'Admin' : user.role === UserRole.DOCENTE ? 'Docente' : 'Estudiante'}
                   </Button>
                 </Link>
+                <Link to="/profile">
+                  <Button variant="ghost" title="Mi Perfil">
+                    <UserIcon size={18} />
+                  </Button>
+                </Link>
                 <Button variant="ghost" onClick={onLogout} title="Cerrar sesión">
                   <LogOut size={18} />
                 </Button>
@@ -117,6 +122,9 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onLogout, onLoginClick }) 
                    <p className="text-sm text-slate-500">Hola, {user.name}</p>
                    <Link to="/dashboard" onClick={() => setIsOpen(false)}>
                       <Button className="w-full justify-start mb-2" variant="outline">Ir al Panel</Button>
+                   </Link>
+                   <Link to="/profile" onClick={() => setIsOpen(false)}>
+                      <Button className="w-full justify-start mb-2" variant="outline">Mi Perfil</Button>
                    </Link>
                    <Button className="w-full justify-start" variant="ghost" onClick={() => { onLogout(); setIsOpen(false); }}>Cerrar Sesión</Button>
                 </div>
